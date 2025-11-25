@@ -1,0 +1,49 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <pthread.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+#define NUM_THREADS 2
+#define PORT 12345
+#define MAX_DATA 100
+
+int data_array[MAX_DATA];
+int data_index = 0;  // Next insertion index
+
+pthread_mutex_t array_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+void *consumer_thread_func(void *arg) {
+    // Stub function for consumer threads
+    // Should read from socket and insert into data_array
+    pid_t pid = getpid();
+    pthread_t tid = pthread_self();
+
+    int dummy_data = 0;  // Replace with actual data reception logic
+
+    if (data_index < MAX_DATA) {
+        data_array[data_index++] = dummy_data;
+        printf("Consumer PID %d, Thread ID %lu inserted data element %d\n", pid, (unsigned long)tid, dummy_data);
+    }
+
+    return NULL;
+}
+
+int main() {
+    // Setup socket to accept connection from producer
+    // (Socket creation and accept code stub)
+
+    // Create consumer threads
+    pthread_t threads[NUM_THREADS];
+    for (int i = 0; i < NUM_THREADS; i++) {
+        pthread_create(&threads[i], NULL, consumer_thread_func, NULL);
+    }
+    //appropriate code to handle thread exit
+
+
+    // Close socket and cleanup
+    return 0;
+}
