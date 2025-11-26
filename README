@@ -1,1 +1,78 @@
-# End to end Lab
+PRODUCER-CONSUMER(End to end) Lab
+Student(s): Saurav Chaudhary
+Date: 11/26/2025
+Environment: macOS (BSD-based) / Linux Compatible
+
+1. FILES INCLUDED
+
+producer.c      : Main entry point. Forks/execs consumer, reads file, sends 
+                    data over TCP socket. Handles macOS connection retries.
+
+consumer.c      : Child process. Listens on port 12345, accepts connection, 
+                    receives data, and stores it in a shared array.
+
+Makefile        : Compiles both programs with -pthread -Wall -Wextra flags.
+
+check_lab.sh    : Automation script to build, run valgrind leak checks, 
+                    and verify input existence.
+
+numbers.txt     : Input dataset (numbers 1-100). "seq 1 100 > numbers.txt"
+
+2. Errors/Resolutions
+
+Problem: "connect: Invalid argument"
+Resolution: Instead of: Create Socket -> Loop [ Try Connect ] I changed it too... Loop [ Create Socket -> Try Connect -> Close if Fail ]
+
+problem: kept encoutering "no such file or directory"
+resolution: "tr -d '\r' < check_lab.sh > check_lab_clean.sh && mv check_lab_clean.sh check_lab.sh && chmod +x check_lab.sh"
+
+3. COMPILATION
+
+To compile the project, run:
+    make
+
+To remove executables and object files:
+    make clean
+
+4. RUNNING THE PROGRAM
+
+Method A: Automated Test Script (Recommended)
+This script compiles the code, checks for memory leaks using Valgrind, and 
+executes the producer.
+
+    ./check_lab.sh
+
+Method B: Manual Execution
+    
+    ./producer numbers.txt
+
+(Note: You do not need to run ./consumer manually; the producer handles the 
+lifecycle of the consumer process.)
+
+5. DESIGN & IMPLEMENTATION NOTES
+
+* Architecture: 
+  The solution uses a Parent (Producer) -> Child (Consumer) process model 
+  communicating via a TCP loopback socket (127.0.0.1:12345).
+
+* Thread Synchronization:
+  - Producer: Uses a mutex to protect the file pointer and the 'numbers_read' 
+    counter to ensure exactly 100 items are read across threads.
+  - Consumer: Uses a mutex to protect the global storage array and index.
+    While the receive call is inside the lock to ensure strict thread safety 
+    per assignment constraints, the critical section is kept minimal.
+
+* macOS/BSD Compatibility:
+  The socket connection logic in producer.c includes a robust retry loop. 
+  On BSD-based systems (like macOS), a failed connect() call invalidates 
+  the socket descriptor. The implementation correctly closes and re-creates 
+  the socket on every retry attempt to prevent 'Invalid argument' (EINVAL) 
+  errors.
+
+* Resource Management:
+  - All sockets are closed upon completion.
+  - Mutexes are destroyed.
+  - SIGPIPE is ignored to handle potential broken pipe errors gracefully.
+  - A timeout (SIGALRM) is implemented in the Consumer to prevent hanging 
+    if the Producer fails to connect.
+

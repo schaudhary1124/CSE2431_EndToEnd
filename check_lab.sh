@@ -1,0 +1,40 @@
+#!/bin/bash
+
+# Build the programs
+make clean
+make
+
+# Check that executables exist
+if [ ! -f producer ] || [ ! -f consumer ]; then
+  echo "Error: Missing producer or consumer executables"
+  exit 1
+fi
+
+# Run valgrind for producer and consumer to detect leaks
+valgrind --leak-check=full ./producer &> producer_valgrind.log
+valgrind --leak-check=full ./consumer &> consumer_valgrind.log
+
+PRODUCER_LEAKS=$(grep -c "definitely lost:" producer_valgrind.log)
+CONSUMER_LEAKS=$(grep -c "definitely lost:" consumer_valgrind.log)
+
+if [ "$PRODUCER_LEAKS" -gt 0 ]; then
+  echo "Producer memory leaks detected."
+else
+  echo "Producer has no memory leaks."
+fi
+
+if [ "$CONSUMER_LEAKS" -gt 0 ]; then
+  echo "Consumer memory leaks detected."
+else
+  echo "Consumer has no memory leaks."
+fi
+
+# Check input file existence
+if [ -f numbers.txt ]; then
+  echo "Input file numbers.txt exists."
+else
+  echo "Error: Missing input file numbers.txt."
+fi
+
+# Basic runtime check
+./producer
